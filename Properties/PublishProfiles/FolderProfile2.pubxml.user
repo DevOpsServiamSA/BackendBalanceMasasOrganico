@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>\\192.168.10.16\wwwroot\ApiFilasurTrazabilidad</_PublishTargetUrl>
+    <History>True|2024-09-04T17:38:51.1439218Z;True|2024-09-03T11:28:53.3747408-05:00;True|2024-08-29T17:26:24.4601995-05:00;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>

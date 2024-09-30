@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>C:\Users\mccanto\3D Objects\Api-Trazabilidad</_PublishTargetUrl>
+    <History>True|2024-09-30T20:59:12.6932795Z;True|2024-09-30T15:31:03.7552686-05:00;True|2024-08-28T11:39:57.4110611-05:00;True|2024-08-23T10:10:48.3652284-05:00;True|2024-07-31T16:04:39.3670460-05:00;True|2024-07-31T16:00:53.9402346-05:00;True|2024-04-19T15:33:22.0804479-05:00;True|2024-04-17T17:09:55.4113744-05:00;True|2024-04-16T15:33:24.5372040-05:00;True|2024-04-16T09:38:39.9545503-05:00;True|2024-04-11T12:38:44.9745867-05:00;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>
