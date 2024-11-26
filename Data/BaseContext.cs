@@ -1,4 +1,5 @@
-﻿using BackEndBalanceMasasOrganico.Models.ContentResponse;
+﻿using BackEndBalanceMasasOrganico.Models.ContentBody;
+using BackEndBalanceMasasOrganico.Models.ContentResponse;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackEndBalanceMasasOrganico.Data
@@ -37,6 +38,14 @@ namespace BackEndBalanceMasasOrganico.Data
         public DbSet<FibraReutilizableXArticulo> FibraReutilizableXArticulo => Set<FibraReutilizableXArticulo>();
         public DbSet<PeriodoProduccion> PeriodoProduccionResponse => Set<PeriodoProduccion>();
 
+        public DbSet<IngresosHiloBody> IngresosHiloBody => Set<IngresosHiloBody>();
+        public DbSet<KardexFibra> KardexFibra => Set<KardexFibra>();
+        public DbSet<KardexCinta> KardexCinta => Set<KardexCinta>();
+
+        public DbSet<FibraDetalleBody> FibraDetalleBody => Set<FibraDetalleBody>();
+
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -72,6 +81,12 @@ namespace BackEndBalanceMasasOrganico.Data
         modelBuilder.Entity<FibraReutilizableXArticulo>().HasNoKey();
         //periodo producicon
         modelBuilder.Entity<PeriodoProduccion>().HasNoKey();
+            #endregion
+        
+        #region Table Transaction
+        modelBuilder.Entity<IngresosHiloBody>().ToTable("XTUS_BM_ORG_DETALLE_KARDEX_HILO", "FILASUR").HasKey(x => x.id);
+        modelBuilder.Entity<KardexFibra>().ToTable("XTUS_BM_ORG_DETALLE_KARDEX_FIBRA", "FILASUR").HasKey(x => x.id);
+        modelBuilder.Entity<KardexCinta>().ToTable("XTUS_BM_ORG_DETALLE_KARDEX_CINTA", "FILASUR").HasKey(x => x.id);
         #endregion
         }
 

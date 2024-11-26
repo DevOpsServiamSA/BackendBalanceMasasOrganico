@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using BackEndBalanceMasasOrganico.Data;
 using BackEndBalanceMasasOrganico.Models.ContentResponse;
+using BackEndBalanceMasasOrganico.Models.ContentBody;
+using OfficeOpenXml;
 
 namespace BackEndBalanceMasasOrganico.Services;
 
@@ -39,11 +41,11 @@ namespace BackEndBalanceMasasOrganico.Services;
 
 
 
-    public async Task<object> GetConsumoProveedorDetalle(string lote_madre, string lote_proveedor, string proveedor)
+    public async Task<object> GetConsumoProveedorDetalle(/*string lote_madre, string lote_proveedor, string proveedor*/)
     {
         try
         {
-            var result = await _context.consumoProveedorDetalleResponse.FromSqlInterpolated($"exec FILASUR.XTUS_SP_BM_PROVEEDOR_CONSUMO_DETALLE {lote_madre},{lote_proveedor},{proveedor}").ToListAsync();
+            var result = await _context.FibraDetalleBody.FromSqlInterpolated($"exec FILASUR.XTUS_ORG_BM_DETALLE_FIBRA").ToListAsync();
             if (result == null) return new object[] { };
             return result;
         }
@@ -151,21 +153,35 @@ namespace BackEndBalanceMasasOrganico.Services;
             }
         }
 
-        public async Task<object> GetDetalleMovimientoIngresoHilo(string lote_madre, string lote_hijo, string consecutivo)
+    public async Task<object> GetDetalleMovimientoIngresoHilo()
+    {
+        try
         {
-            try
-            {
-                var result = await _context.DetalleMovimientoIngresosHiloResponse.FromSqlInterpolated($"exec FILASUR.XTUS_SP_BM_HL_INV_ING_DET2 {lote_madre},{lote_hijo},{consecutivo}").ToListAsync();
-                if (result == null) return new object[] { };
-                return result;
-            }
-            catch (System.Exception)
-            {
-                return new object[] { };
-            }
+            var result = await _context.DetalleMovimientoIngresosHiloResponse.FromSqlInterpolated($"exec FILASUR.XTUS_ORG_BM_INGRESOS_HILO").ToListAsync();
+            if (result == null) return new object[] { };
+            return result;
         }
+        catch (System.Exception)
+        {
+            return new object[] { };
+        }
+    }
 
-        public async Task<object> GetDetalleMovimientoSalidaHilo(string lote_madre, string lote_hijo, string consecutivo)
+    public async Task<object> GetDetalleConsecutivoIngresos(string lote_madre, string lote_hijo, string consecutivo)
+    {
+        try
+        {
+            var result = await _context.DetalleMovimientoIngresosHiloResponse.FromSqlInterpolated($"exec FILASUR.XTUS_ORG_BM_CONSECUTIVO_INGRESOS {lote_madre},{lote_hijo},{consecutivo}").ToListAsync();
+            if (result == null) return new object[] { };
+            return result;
+        }
+        catch (System.Exception)
+        {
+            return new object[] { };
+        }
+    }
+
+    public async Task<object> GetDetalleMovimientoSalidaHilo(string lote_madre, string lote_hijo, string consecutivo)
         {
             try
             {
@@ -498,6 +514,246 @@ namespace BackEndBalanceMasasOrganico.Services;
         {
             return new object[] { };
         }
+    }
+
+    //Configuración carga de archivo excel
+
+    public async Task<bool> ProcesarYGuardarExcelHilos(Stream stream)
+    {
+        using (var package = new ExcelPackage(stream))
+        {
+            var worksheet = package.Workbook.Worksheets[0]; // Suponiendo que los datos están en la primera hoja
+            var rowCount = worksheet.Dimension.Rows;
+
+            for (int row = 2; row <= rowCount; row++) // Asumiendo que la fila 1 tiene los encabezados
+            {
+                var lote_madre = worksheet.Cells[row, 1].Text; // Fecha
+                var articulo = worksheet.Cells[row, 2].Text; // Fecha
+                var descripcion = worksheet.Cells[row, 3].Text; // Fecha
+                var unidad_almacen = worksheet.Cells[row, 4].Text; // Fecha
+                var alias_produccion = worksheet.Cells[row, 5].Text; // Fecha
+                var desc_alias = worksheet.Cells[row, 6].Text; // Fecha
+                var fecha = worksheet.Cells[row, 7].Text; // Fecha
+                var aplicacion = worksheet.Cells[row, 8].Text; // Fecha
+                var naturaleza = worksheet.Cells[row, 9].Text; // Fecha
+                var operacion = worksheet.Cells[row, 10].Text; // Fecha
+                var bodega = worksheet.Cells[row, 11].Text; // Bodega
+                var localizacion = worksheet.Cells[row, 12].Text; // Artículo
+                var lote = worksheet.Cells[row, 13].Text; // Descripción Artículo
+                //var cantidad = worksheet.Cells[row, 7].Text; // Cantidad
+                var color = worksheet.Cells[row, 14].Text; // Operación
+                var unidad_medida = worksheet.Cells[row, 15].Text; // Descripción Consecutivo
+
+                decimal entrada = 0;
+                decimal salida = 0;
+
+                decimal.TryParse(worksheet.Cells[row, 16].Text, out entrada);
+                decimal.TryParse(worksheet.Cells[row, 17].Text, out salida);
+
+                var referencia = worksheet.Cells[row, 18].Text; // Referencia
+                var guia_remision = worksheet.Cells[row, 19].Text; // Referencia
+                var orden_servicio = worksheet.Cells[row, 20].Text; // Referencia
+                var audit_trans_inv = worksheet.Cells[row, 21].Text; // Referencia
+
+                decimal cantidad = 0;
+                decimal.TryParse(worksheet.Cells[row, 7].Text, out cantidad);
+
+                // Aquí puedes realizar la inserción de los datos en la base de datos
+                // Ejemplo:
+                await GuardarIngresosHiloBD(new IngresosHiloBody
+                {
+                    lote_madre = lote_madre,
+                    articulo = articulo,
+                    descripcion = descripcion,
+                    unidad_almacen = unidad_almacen,
+                    alias_produccion = alias_produccion,
+                    desc_alias = desc_alias,
+                    fecha = fecha,
+                    aplicacion = aplicacion,
+                    naturaleza = naturaleza,
+                    operacion = operacion,
+                    bodega = bodega,
+                    localizacion = localizacion,
+                    lote = lote,
+                    color = color,
+                    unidad_medida = unidad_medida,
+                    entrada = entrada,
+                    salida = salida,
+                    referencia = referencia,
+                    guia_remision= guia_remision,
+                    orden_servicio = orden_servicio,
+                    audit_trans_inv = audit_trans_inv
+                });
+            }
+        }
+        return true;
+    }
+
+
+    private async Task GuardarIngresosHiloBD(IngresosHiloBody detalle)
+    {
+        // Inserta los datos en la tabla SQL
+        _context.IngresosHiloBody.Add(detalle);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ProcesarYGuardarExcelFibraDetalle(Stream stream)
+    {
+        using (var package = new ExcelPackage(stream))
+        {
+            var worksheet = package.Workbook.Worksheets[0]; // Suponiendo que los datos están en la primera hoja
+            var rowCount = worksheet.Dimension.Rows;
+
+            for (int row = 2; row <= rowCount; row++) // Asumiendo que la fila 1 tiene los encabezados
+            {
+                var articulo = worksheet.Cells[row, 1].Text;
+                var descripcion = worksheet.Cells[row, 2].Text;
+                var fecha = worksheet.Cells[row, 3].Text;
+                var documento = worksheet.Cells[row, 4].Text;
+                var bodega = worksheet.Cells[row, 5].Text;
+                var lote = worksheet.Cells[row, 6].Text;
+                var color = worksheet.Cells[row, 7].Text;
+                var unidad_medida = worksheet.Cells[row, 8].Text;
+
+                // Detectar si la cantidad es un entero o un decimal
+                decimal entrada = 0;
+                decimal salida = 0;
+                decimal saldo = 0;
+                decimal saldo_tc = 0;
+
+                // Intenta convertir las cantidades a decimal
+                decimal.TryParse(worksheet.Cells[row, 9].Text, out entrada);
+                decimal.TryParse(worksheet.Cells[row, 10].Text, out salida);
+                decimal.TryParse(worksheet.Cells[row, 11].Text, out saldo);
+                decimal.TryParse(worksheet.Cells[row, 12].Text, out saldo_tc);
+
+                var tc = worksheet.Cells[row, 13].Text;
+                var guia = worksheet.Cells[row, 14].Text;
+                var fac = worksheet.Cells[row, 15].Text;
+                var lote_madre = worksheet.Cells[row, 16].Text;
+
+
+                // Aquí puedes realizar la inserción de los datos en la base de datos
+                // Ejemplo:
+                await GuardarDetalleFibraBD(new KardexFibra
+                {
+                    articulo = articulo,
+                    descripcion = descripcion,
+                    fecha = fecha,
+                    documento = documento,
+                    bodega = bodega,
+                    lote = lote,
+                    color = color,
+                    unidad_medida = unidad_medida,
+                    entrada = entrada,
+                    salida = salida,
+                    saldo = saldo,
+                    saldo_tc = saldo_tc,
+                    tc = tc,
+                    guia = guia,
+                    fac = fac,
+                    lote_madre = lote_madre,
+                });
+            }
+        }
+        return true;
+    }
+
+    private async Task GuardarDetalleFibraBD(KardexFibra detalle)
+    {
+        // Inserta los datos en la tabla SQL
+        _context.KardexFibra.Add(detalle);
+        await _context.SaveChangesAsync();
+    }
+
+
+
+    public async Task<bool> ProcesarYGuardarExcelCintaDetalle(Stream stream)
+    {
+        using (var package = new ExcelPackage(stream))
+        {
+            var worksheet = package.Workbook.Worksheets[0]; // Suponiendo que los datos están en la primera hoja
+            var rowCount = worksheet.Dimension.Rows;
+
+            for (int row = 2; row <= rowCount; row++) // Asumiendo que la fila 1 tiene los encabezados
+            {
+                var lote_madre = worksheet.Cells[row, 1].Text;
+                var articulo = worksheet.Cells[row, 2].Text;
+                var descripcion = worksheet.Cells[row, 3].Text;
+                var fecha = worksheet.Cells[row, 4].Text;
+                var documento = worksheet.Cells[row, 5].Text;
+                var naturaleza = worksheet.Cells[row, 6].Text;
+                var operacion = worksheet.Cells[row, 7].Text;
+                var bodega = worksheet.Cells[row, 8].Text;
+                var lote = worksheet.Cells[row, 9].Text;
+                var color = worksheet.Cells[row, 10].Text;
+                var unidad_medida = worksheet.Cells[row, 11].Text;
+
+                // Detectar si la cantidad es un entero o un decimal
+                decimal entrada = 0;
+                decimal salida = 0;
+                decimal saldo = 0;
+
+                // Intenta convertir las cantidades a decimal
+                decimal.TryParse(worksheet.Cells[row, 12].Text, out entrada);
+                decimal.TryParse(worksheet.Cells[row, 13].Text, out salida);
+                decimal.TryParse(worksheet.Cells[row, 14].Text, out saldo);
+
+                var documento_venta = worksheet.Cells[row, 15].Text;
+                var cliente = worksheet.Cells[row, 16].Text;
+                var orden_compra = worksheet.Cells[row, 17].Text;
+                var referencia = worksheet.Cells[row, 18].Text;
+                var programa = worksheet.Cells[row, 19].Text;
+                var guia_remision = worksheet.Cells[row, 20].Text;
+                var orden_servicio = worksheet.Cells[row, 21].Text;
+                var doc_referencia = worksheet.Cells[row, 22].Text;
+                var trans_inv = worksheet.Cells[row, 23].Text;
+                var consecutivo = worksheet.Cells[row, 24].Text;
+                var localizacion = worksheet.Cells[row, 25].Text;
+                var art_nombre = worksheet.Cells[row, 26].Text;
+
+
+                // Aquí puedes realizar la inserción de los datos en la base de datos
+                // Ejemplo:
+                await GuardarDetalleCintaBD(new KardexCinta
+                {
+                    lote_madre = lote_madre,
+                    articulo = articulo,
+                    descripcion = descripcion,
+                    fecha = fecha,
+                    documento = documento,
+                    naturaleza = naturaleza,
+                    operacion = operacion,
+                    bodega = bodega,
+                    lote = lote,
+                    color = color,
+                    unidad_medida = unidad_medida,
+                    entrada = entrada,
+                    salida = salida,
+                    saldo = saldo,
+                    documento_venta = documento_venta,
+                    cliente = cliente,
+                    orden_compra = orden_compra,
+                    referencia = referencia,
+                    programa = programa,
+                    guia_remision = guia_remision,
+                    orden_servicio = orden_servicio,
+                    doc_referencia = doc_referencia,
+                    trans_inv = trans_inv,
+                    consecutivo = consecutivo,
+                    localizacion = localizacion,
+                    art_nombre = art_nombre
+                });
+            }
+        }
+        return true;
+    }
+
+    private async Task GuardarDetalleCintaBD(KardexCinta detalle)
+    {
+        // Inserta los datos en la tabla SQL
+        _context.KardexCinta.Add(detalle);
+        await _context.SaveChangesAsync();
     }
 }
 

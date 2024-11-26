@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BackEndBalanceMasasOrganico.Data;
 using BackEndBalanceMasasOrganico.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackEndBalanceMasasOrganico.Controllers;
 
@@ -39,12 +40,13 @@ public class ConsumoProveedorController : _BaseController
     }
 
 
-    [HttpGet("ConsumoProveedorDetalle/{lote_madre}/{lote_proveedor}/{proveedor}")]
-    public async Task<ActionResult<object>> GetConsumoProveedorDetalle(string lote_madre, string lote_proveedor, string proveedor)
+    //[HttpGet("ConsumoProveedorDetalle/{lote_madre}/{lote_proveedor}/{proveedor}")]
+    [HttpGet("ConsumoProveedorDetalle/DetalleFibra")]
+    public async Task<ActionResult<object>> GetConsumoProveedorDetalle(/*string lote_madre, string lote_proveedor, string proveedor*/)
     {
         try
         {
-            var result = await new ConsumoProveedorService(_context).GetConsumoProveedorDetalle(lote_madre, lote_proveedor, proveedor);
+            var result = await new ConsumoProveedorService(_context).GetConsumoProveedorDetalle();
             return result;
         }
         catch (System.Exception)
@@ -151,12 +153,26 @@ public class ConsumoProveedorController : _BaseController
         }
     }
 
-    [HttpGet("DetalleMovimientos/IngresosHilo/{lote_madre}/{lote_hijo}/{consecutivo}")]
-    public async Task<ActionResult<object>> GetDetalleMovimientoIngresoHilo(string lote_madre, string lote_hijo, string consecutivo)
+    [HttpGet("DetalleMovimientos/IngresosHilo")]
+    public async Task<ActionResult<object>> GetDetalleMovimientoIngresoHilo()
     {
         try
         {
-            var result = await new ConsumoProveedorService(_context).GetDetalleMovimientoIngresoHilo(lote_madre,lote_hijo,consecutivo);
+            var result = await new ConsumoProveedorService(_context).GetDetalleMovimientoIngresoHilo();
+            return result;
+        }
+        catch (System.Exception)
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpGet("DetalleMovimientos/ConsecutivoIngresos/{lote_madre}/{lote_hijo}/{consecutivo}")]
+    public async Task<ActionResult<object>> GetDetalleConsecutivoIngresoHilo(string lote_madre, string lote_hijo, string consecutivo)
+    {
+        try
+        {
+            var result = await new ConsumoProveedorService(_context).GetDetalleConsecutivoIngresos(lote_madre, lote_hijo, consecutivo);
             return result;
         }
         catch (System.Exception)
@@ -494,6 +510,88 @@ public class ConsumoProveedorController : _BaseController
         catch (System.Exception)
         {
             return NotFound();
+        }
+    }
+
+    [HttpPost("DetalleIngresosHilos/CargarExcelHilos")]
+    public async Task<IActionResult> CargarExcelHilos(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No se proporcionó un archivo.");
+
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM FILASUR.XTUS_BM_ORG_DETALLE_KARDEX_HILO");
+
+            
+            // Procesar el archivo Excel
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+
+            // Extraer datos y guardarlos en la base de datos
+            var result = await new ConsumoProveedorService(_context).ProcesarYGuardarExcelHilos(stream);
+
+            return Ok(new { mensaje = "Archivo procesado exitosamente.", result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al procesar el archivo: {ex.Message}");
+        }
+    }
+
+
+    [HttpPost("ConsumoProveedor/CargarExcelDetalleFibra")]
+    public async Task<IActionResult> CargarExcelDetalleFibra(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No se proporcionó un archivo.");
+
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM FILASUR.XTUS_BM_ORG_DETALLE_KARDEX_FIBRA");
+
+
+            // Procesar el archivo Excel
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+
+            // Extraer datos y guardarlos en la base de datos
+            var result = await new ConsumoProveedorService(_context).ProcesarYGuardarExcelFibraDetalle(stream);
+
+            return Ok(new { mensaje = "Archivo procesado exitosamente.", result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al procesar el archivo: {ex.Message}");
+        }
+    }
+
+    [HttpPost("ConsumoProveedor/CargarExcelDetalleCinta")]
+    public async Task<IActionResult> CargarExcelDetalleCinta(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No se proporcionó un archivo.");
+            
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM FILASUR.XTUS_BM_ORG_DETALLE_KARDEX_CINTA");
+
+
+            // Procesar el archivo Excel
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+
+            // Extraer datos y guardarlos en la base de datos
+            var result = await new ConsumoProveedorService(_context).ProcesarYGuardarExcelCintaDetalle(stream);
+
+            return Ok(new { mensaje = "Archivo procesado exitosamente.", result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al procesar el archivo: {ex.Message}");
         }
     }
 }
